@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Check-in · Cool Innotech</title>
+<style>
+:root{--ink:#fff;--sub:rgba(255,255,255,.72);--pri:#1f8fd0;--ok:#2ec98a;--warn:#f0a23b;--bad:#ff6b5b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;background:#000;color:var(--ink);overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Sarabun","Noto Sans Thai","Thonburi","Sukhumvit Set",Roboto,sans-serif;
+  font-size:16px;line-height:1.4;-webkit-text-size-adjust:100%}
+.scr{position:fixed;inset:0;display:flex;flex-direction:column}
+/* ---------- กล้อง ---------- */
+#cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+#cam .still{position:relative;flex:1;min-height:0;width:100%;object-fit:contain;background:#000;margin-bottom:12px}
+.topbar{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:8px;
+  padding:calc(12px + env(safe-area-inset-top)) 14px 12px;background:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,0))}
+.who{font-weight:700;font-size:16px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.who small{display:block;font-weight:500;font-size:12.5px;color:var(--sub)}
+.pill{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:7px 12px;font-size:13px;
+  background:rgba(0,0,0,.5);color:#fff;border:0;font-family:inherit;white-space:nowrap}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--sub)}
+.pill.ok i{background:var(--ok)} .pill.wait i{background:var(--warn);animation:bl 1s infinite} .pill.bad i{background:var(--bad)}
+@keyframes bl{50%{opacity:.25}}
+.spacer{flex:1}
+.stampPrev{position:relative;z-index:2;margin:0 14px 14px;padding:9px 12px;border-radius:12px;background:rgba(0,0,0,.55);
+  font-size:13px;line-height:1.5;font-weight:600}
+.ctrl{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;
+  padding:6px 0 calc(22px + env(safe-area-inset-bottom))}
+.shutter{width:84px;height:84px;border-radius:50%;border:5px solid #fff;background:rgba(255,255,255,.25);padding:0;cursor:pointer;
+  touch-action:manipulation;transition:transform .08s}
+.shutter:active{transform:scale(.92)}
+.shutter span{display:block;width:62px;height:62px;margin:auto;border-radius:50%;background:#fff}
+.hintTxt{text-align:center;font-size:13px;color:var(--sub);margin-top:8px}
+/* ---------- สถานะอัปโหลด ---------- */
+.status{position:relative;z-index:2;margin:0 14px calc(18px + env(safe-area-inset-bottom));padding:16px;border-radius:18px;
+  background:rgba(12,20,25,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.st1{display:flex;align-items:center;gap:12px;font-size:17px;font-weight:700}
+.st2{margin-top:6px;color:var(--sub);font-size:14px;white-space:pre-line}
+.dot{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff}
+.dot.spin{border:3px solid rgba(255,255,255,.25);border-top-color:#fff;animation:sp .8s linear infinite}
+.dot.ok{background:var(--ok)} .dot.bad{background:var(--bad)}
+@keyframes sp{to{transform:rotate(360deg)}}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:56px;border-radius:14px;border:0;margin-top:12px;
+  background:var(--pri);color:#fff;font:inherit;font-size:17px;font-weight:700;text-decoration:none;cursor:pointer;touch-action:manipulation}
+.btn.ghost{background:rgba(255,255,255,.12);min-height:48px;font-size:15px;font-weight:600}
+/* ---------- อื่น ๆ ---------- */
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.big{font-size:20px;font-weight:700;margin:10px 0 6px}
+.sub{color:var(--sub);font-size:14.5px;max-width:340px}
+.camIcon{width:120px;height:120px;border-radius:50%;background:var(--pri);display:flex;align-items:center;justify-content:center;
+  font-size:56px;border:0;cursor:pointer;margin-bottom:6px}
+.vh{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+</style>
+</head>
+<body>
+
+<section id="sLoad" class="scr"><div class="center"><div class="dot spin"></div><div class="sub" style="margin-top:12px">กำลังเปิดกล้อง…</div></div></section>
+
+<section id="sErr" class="scr" hidden>
+  <div class="center">
+    <div class="dot bad" style="width:64px;height:64px;font-size:32px">!</div>
+    <div class="big" id="errMsg">เปิดลิงก์ไม่ได้</div>
+    <div class="sub">กลับไปที่ LINE แล้วพิมพ์ "เช็คอิน" ใหม่</div>
+    <button class="btn" id="errBack" type="button" style="max-width:340px">กลับไปที่ LINE</button>
+  </div>
+</section>
+
+<section id="cam" class="scr" hidden>
+  <video id="video" playsinline muted autoplay></video>
+  <div class="topbar">
+    <div class="who"><span id="repName"></span><small id="custTag"></small></div>
+    <button class="pill wait" id="geoPill" type="button"><i></i><span id="geoTxt">กำลังหาพิกัด…</span></button>
+  </div>
+  <div class="spacer" id="spacer"></div>
+  <img id="still" class="still" alt="รูป Check-in" hidden>
+
+  <!-- โหมดถ่าย -->
+  <div id="shootUi">
+    <div class="stampPrev" id="stampPrev"></div>
+    <div class="ctrl"><button class="shutter" id="shutter" type="button" aria-label="ถ่ายรูป"><span></span></button></div>
+  </div>
+
+  <!-- โหมดกล้องเปิดไม่ได้ → ใช้กล้องของเครื่อง -->
+  <div id="fbUi" class="status" hidden>
+    <div class="st1">เปิดกล้องในหน้านี้ไม่ได้</div>
+    <div class="st2">แตะปุ่มด้านล่างเพื่อใช้กล้องของมือถือแทน</div>
+    <button class="btn" id="fbBtn" type="button">📷 เปิดกล้อง</button>
+  </div>
+
+  <!-- โหมดอัปโหลด / ผลลัพธ์ -->
+  <div id="upUi" class="status" hidden>
+    <div class="st1"><div class="dot spin" id="upDot"></div><span id="upTitle">กำลังอัปโหลด…</span></div>
+    <div class="st2" id="upSub">ห้ามปิดหน้านี้จนกว่าจะเสร็จ</div>
+    <button class="btn" id="goChat" type="button" hidden>กลับไปที่แชท LINE</button>
+    <button class="btn" id="retry" type="button" hidden>ส่งอีกครั้ง</button>
+    <button class="btn ghost" id="retake" type="button" hidden>ถ่ายใหม่</button>
+  </div>
+  <input class="vh" type="file" id="file" accept="image/*" capture="environment">
+</section>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+/* ====== ตั้งค่า 2 บรรทัดนี้ (ไม่ใช่ความลับ) ====== */
+var LIFF_ID = 'ใส่_LIFF_ID';                       /* LINE Developers → LINE Login channel → LIFF → LIFF ID */
+var API_URL = 'ใส่_Web_app_URL_ที่ลงท้าย_/exec';   /* ค่าเดียวกับ APP_URL ใน Script Properties */
+/* ================================================ */
+(function(){
+  var MAX_SIDE=1100, QUALITY=0.62, MAX_AGE_SEC=600, SENT_TEXT='📷 ส่งรูปเช็คอินแล้ว';
+  var st={rep:'',offset:0,geo:null,geoBusy:false,photo:'',ageSec:null,stream:null,ready:false,idToken:'',waiters:[],busy:false};
+
+  function $(i){return document.getElementById(i);}
+  function show(id){['sLoad','sErr','cam'].forEach(function(k){$(k).hidden=(k!==id);});}
+  function pad(n){return n<10?'0'+n:''+n;}
+  function nowMs(){return Date.now()+st.offset;}
+  function fmt(ms){var d=new Date(ms+7*3600000);   /* เวลาไทยเสมอ */
+    return pad(d.getUTCDate())+'/'+pad(d.getUTCMonth()+1)+'/'+d.getUTCFullYear()+' '+pad(d.getUTCHours())+':'+pad(d.getUTCMinutes())+':'+pad(d.getUTCSeconds());}
+  function inClient(){try{return window.liff&&liff.isInClient();}catch(e){return false;}}
+  function closeWin(){try{if(inClient()){liff.closeWindow();return;}}catch(e){} location.href='https://line.me/R/';}
+  function fail(msg){$('errMsg').textContent=msg;stopCam();show('sErr');}
+  function api(body){
+    return fetch(API_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)})
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();});
+  }
+  function stampLines(){
+    var g=st.geo;
+    return [fmt(nowMs()),
+      g?('พิกัด '+g.lat.toFixed(5)+', '+g.lng.toFixed(5)+' (±'+Math.round(g.acc)+' ม.)'):'ไม่มีข้อมูลพิกัด',
+      'ฝ่ายขาย: '+(st.rep||'…'), 'COOL INNOTECH · Check-in'];
+  }
+  function tick(){ if(!$('shootUi').hidden) $('stampPrev').innerHTML=stampLines().map(function(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;');}).join('<br>'); }
+  function whenReady(cb){ if(st.ready)cb(); else st.waiters.push(cb); }
+
+  /* ---------- พิกัด ---------- */
+  function setGeo(c,t){$('geoPill').className='pill '+c;$('geoTxt').textContent=t;}
+  function getGeo(done,timeout){
+    if(!navigator.geolocation){setGeo('bad','ไม่รองรับพิกัด');if(done)done();return;}
+    st.geoBusy=true;setGeo('wait','กำลังหาพิกัด…');
+    navigator.geolocation.getCurrentPosition(function(p){
+      st.geoBusy=false;st.geo={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,ts:Date.now()};
+      setGeo('ok','±'+Math.round(p.coords.accuracy)+' ม.');tick();if(done)done();
+    },function(err){
+      st.geoBusy=false;st.geo=null;
+      setGeo('bad',(err&&err.code===1?'ไม่อนุญาตพิกัด':'หาพิกัดไม่ได้')+' · แตะลองใหม่');if(done)done();
+    },{enableHighAccuracy:true,timeout:timeout||12000,maximumAge:20000});
+  }
+  function withGeo(cb){
+    if(st.geo&&Date.now()-st.geo.ts<120000){cb();return;}
+    var fired=false,go=function(){if(!fired){fired=true;cb();}};
+    setTimeout(go,4000);
+    if(!st.geoBusy)getGeo(go,4000);else{var t=setInterval(function(){if(!st.geoBusy){clearInterval(t);go();}},200);}
+  }
+
+  /* ---------- กล้อง ---------- */
+  function startCam(){
+    $('still').hidden=true;$('spacer').hidden=false;$('video').hidden=false;$('upUi').hidden=true;$('fbUi').hidden=true;$('shootUi').hidden=false;
+    if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){useFallback();return;}
+    var done=false;
+    var to=setTimeout(function(){if(!done){done=true;useFallback();}},9000);
+    navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1440}}})
+      .then(function(s){
+        if(done){s.getTracks().forEach(function(t){t.stop();});return;}
+        done=true;clearTimeout(to);st.stream=s;
+        var v=$('video');v.srcObject=s;var p=v.play();if(p&&p.catch)p.catch(function(){});
+      }).catch(function(){if(!done){done=true;clearTimeout(to);useFallback();}});
+  }
+  function stopCam(){if(st.stream){st.stream.getTracks().forEach(function(t){t.stop();});st.stream=null;}}
+  function useFallback(){stopCam();$('video').hidden=true;$('shootUi').hidden=true;$('fbUi').hidden=false;}
+  function stamp(src,w,h){
+    var k=Math.min(1,MAX_SIDE/Math.max(w,h)),cw=Math.round(w*k),ch=Math.round(h*k);
+    var cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+    var g=cv.getContext('2d');g.drawImage(src,0,0,cw,ch);
+    var lines=stampLines();
+    var fam='"Sarabun","Noto Sans Thai","Thonburi","Sukhumvit Set",-apple-system,"Segoe UI",Roboto,sans-serif';
+    var fs=Math.max(14,Math.round(cw/30)),pd;
+    for(;;){g.font='600 '+fs+'px '+fam;var mx=0;lines.forEach(function(t){mx=Math.max(mx,g.measureText(t).width);});
+      pd=Math.round(fs*0.55);if(mx<=cw-pd*2||fs<=11)break;fs--;}
+    var lh=Math.round(fs*1.3),bh=lh*lines.length+pd*2;
+    g.fillStyle='rgba(0,0,0,.62)';g.fillRect(0,ch-bh,cw,bh);
+    g.fillStyle='#fff';g.textBaseline='top';
+    lines.forEach(function(t,i){g.fillText(t,pd,ch-bh+pd+i*lh);});
+    var q=QUALITY,out=cv.toDataURL('image/jpeg',q);
+    while(out.length>900000&&q>0.35){q-=0.08;out=cv.toDataURL('image/jpeg',q);}
+    return out;
+  }
+  function showStill(src){$('still').src=src;$('still').hidden=false;$('spacer').hidden=true;$('video').hidden=true;$('shootUi').hidden=true;$('fbUi').hidden=true;}
+  function finishShot(src,w,h){
+    upState('spin','กำลังประทับลายน้ำ…','');
+    whenReady(function(){ withGeo(function(){
+      try{st.photo=stamp(src,w,h);}catch(e){upState('bad','ประมวลผลรูปไม่สำเร็จ','กรุณาถ่ายใหม่');$('retake').hidden=false;return;}
+      showStill(st.photo);send();
+    });});
+  }
+  function shoot(){
+    var v=$('video');if(!v.videoWidth)return;
+    if(navigator.vibrate)try{navigator.vibrate(30);}catch(e){}
+    var cv=document.createElement('canvas');cv.width=v.videoWidth;cv.height=v.videoHeight;
+    cv.getContext('2d').drawImage(v,0,0);
+    stopCam();st.ageSec=0;
+    showStill(cv.toDataURL('image/jpeg',0.8));
+    finishShot(cv,cv.width,cv.height);
+  }
+  function onFile(f){
+    if(!f)return;
+    var age=(f.lastModified&&f.lastModified>1e12)?Math.round((Date.now()-f.lastModified)/1000):null;
+    if(age!==null&&age>MAX_AGE_SEC){
+      $('fbUi').hidden=false;$('upUi').hidden=true;
+      $('fbUi').querySelector('.st2').textContent='รูปนี้ถ่ายไว้เมื่อ '+Math.round(age/60)+' นาทีที่แล้ว กรุณาถ่ายใหม่ด้วยกล้อง';
+      return;
+    }
+    st.ageSec=age;
+    var url=URL.createObjectURL(f),img=new Image();
+    img.onload=function(){finishShot(img,img.naturalWidth,img.naturalHeight);setTimeout(function(){URL.revokeObjectURL(url);},5000);};
+    img.onerror=function(){URL.revokeObjectURL(url);upState('bad','เปิดรูปไม่ได้','กรุณาถ่ายใหม่');$('retake').hidden=false;};
+    img.src=url;
+  }
+
+  /* ---------- อัปโหลดทันที แล้วกลับแชท ---------- */
+  function upState(dot,title,sub){
+    $('upUi').hidden=false;$('fbUi').hidden=true;
+    $('upDot').className='dot '+dot;$('upDot').textContent=dot==='ok'?'✓':(dot==='bad'?'!':'');
+    $('upTitle').textContent=title;$('upSub').textContent=sub;
+    $('goChat').hidden=true;$('retry').hidden=true;$('retake').hidden=true;
+  }
+  function backToChat(r){
+    /* ส่งข้อความเข้าแชทในนามผู้ใช้ → บอทตอบถามชื่อลูกค้า (reply = ฟรี) แล้วปิดหน้าต่าง */
+    if(inClient()){
+      liff.sendMessages([{type:'text',text:SENT_TEXT}]).then(function(){liff.closeWindow();})
+        .catch(function(){$('goChat').hidden=false;});
+    }else{$('goChat').hidden=false;}
+  }
+  function send(){
+    if(st.busy||!st.photo)return;
+    st.busy=true;
+    upState('spin','กำลังอัปโหลด…','ห้ามปิดหน้านี้จนกว่าจะเสร็จ');
+    var meta={lat:st.geo?st.geo.lat:null,lng:st.geo?st.geo.lng:null,acc:st.geo?st.geo.acc:null,ageSec:st.ageSec};
+    api({action:'upload',idToken:st.idToken,photo:st.photo,meta:meta}).then(function(r){
+      st.busy=false;
+      if(!r||!r.ok){
+        if(r&&(r.code==='auth'||r.code==='reg')){fail(r.msg);return;}
+        upState('bad','อัปโหลดไม่สำเร็จ',(r&&r.msg)||'กรุณาลองอีกครั้ง');$('retry').hidden=false;$('retake').hidden=false;return;
+      }
+      if(r.completed) upState('ok','บันทึก Check-in เรียบร้อย','ลูกค้า: '+r.customer+' · '+r.at+' น.\nกำลังกลับไปที่แชท…');
+      else upState('ok','อัปโหลดแล้ว','กำลังกลับไปที่แชท ให้ตอบชื่อลูกค้า…'+(r.hasGeo?'':'\n(รูปนี้ไม่มีพิกัด)'));
+      backToChat(r);
+    }).catch(function(){
+      st.busy=false;
+      upState('bad','อัปโหลดไม่สำเร็จ','ตรวจสัญญาณอินเทอร์เน็ต แล้วกด "ส่งอีกครั้ง" (รูปยังอยู่)');
+      $('retry').hidden=false;$('retake').hidden=false;
+    });
+  }
+
+  /* ---------- เริ่ม: เปิดกล้องทันที ยืนยันตัวตนคู่ขนาน ---------- */
+  $('shutter').onclick=shoot;
+  $('fbBtn').onclick=function(){$('file').click();};
+  $('file').onchange=function(){var f=this.files&&this.files[0];this.value='';onFile(f);};
+  $('retry').onclick=send;
+  $('retake').onclick=function(){st.photo='';startCam();};
+  $('geoPill').onclick=function(){getGeo();};
+  $('goChat').onclick=function(e){e.preventDefault();closeWin();};
+  $('errBack').onclick=function(e){e.preventDefault();closeWin();};
+
+  $('custTag').textContent='Check-in เข้าพบลูกค้า';
+  show('cam');startCam();getGeo();tick();setInterval(tick,1000);
+
+  if(!window.liff){fail('โหลด LINE ไม่สำเร็จ ตรวจสัญญาณแล้วลองใหม่');return;}
+  liff.init({liffId:LIFF_ID}).then(function(){
+    if(!liff.isLoggedIn()){liff.login({redirectUri:location.href});return;}
+    st.idToken=liff.getIDToken()||'';
+    if(!st.idToken){fail('ตั้งค่า LIFF ยังไม่ครบ (ต้องเปิดสิทธิ์ openid)');return;}
+    return api({action:'init',idToken:st.idToken}).then(function(r){
+      if(!r||!r.ok){fail((r&&r.msg)||'ยืนยันตัวตนไม่สำเร็จ');return;}
+      st.rep=r.rep||'';st.offset=(r.now||Date.now())-Date.now();
+      if(r.maxAgeSec)MAX_AGE_SEC=r.maxAgeSec;
+      $('repName').textContent=st.rep;
+      if(r.customer)$('custTag').textContent='ลูกค้า: '+r.customer;
+      st.ready=true;tick();
+      var w=st.waiters;st.waiters=[];w.forEach(function(f){f();});
+    });
+  }).catch(function(){fail('เชื่อมต่อไม่สำเร็จ ตรวจสัญญาณแล้วเปิดใหม่');});
+})();
+</script>
+</body>
+</html>
