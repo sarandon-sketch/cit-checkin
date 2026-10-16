@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>รายงานการเข้าพบลูกค้า · Cool Innotech</title>
+<style>
+:root{--bg:#eef2f5;--card:#fff;--ink:#13293a;--sub:#5b7283;--line:#dfe7ee;--pri:#0b5c8a;--bar:#0f2a3a;--ok:#12805c;--warn:#b25e09;--bad:#c0392b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Sarabun","Noto Sans Thai","Thonburi","Sukhumvit Set",Roboto,sans-serif;
+  font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+.top{background:var(--bar);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 18px 16px}
+.top .k{font-size:11.5px;letter-spacing:.16em;opacity:.65;font-weight:700}
+.top h1{margin:3px 0 2px;font-size:20px}
+.top .s{opacity:.78;font-size:13.5px}
+.wrap{max-width:1100px;margin:0 auto;padding:14px 16px 40px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.tabs{display:flex;gap:4px;background:#dfe7ee;padding:4px;border-radius:12px}
+.tab{border:0;background:transparent;font:inherit;font-size:14px;font-weight:600;color:var(--sub);padding:7px 14px;border-radius:9px;cursor:pointer}
+.tab.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.sp{flex:1}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:10px;cursor:pointer}
+.btn.pri{background:var(--pri);color:#fff;border-color:transparent}
+.range{font-size:13.5px;color:var(--sub);margin:0 2px 10px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.kpi .l{font-size:12.5px;color:var(--sub)}
+.kpi .v{font-size:26px;font-weight:700;line-height:1.15;margin-top:2px}
+.kpi .v small{font-size:13px;font-weight:600;color:var(--sub);margin-left:3px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.card h2{font-size:15.5px;margin:0 0 10px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:12.5px;color:var(--sub);font-weight:600;text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:8px;text-align:right;border-bottom:1px solid #eef2f5}
+th:first-child,td:first-child{text-align:left}
+tr.rowsel{cursor:pointer}
+tr.rowsel:hover td{background:#f6f9fb}
+.warn{color:var(--warn);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font:inherit;font-size:13.5px;cursor:pointer;color:var(--sub)}
+.chip.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.grp{margin:16px 2px 8px;display:flex;align-items:baseline;gap:8px}
+.grp b{font-size:16px}
+.grp span{color:var(--sub);font-size:13px}
+.day{font-size:13px;font-weight:700;color:var(--sub);margin:10px 2px 6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.vcard{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.ph{position:relative;background:#dfe7ee;aspect-ratio:3/4;display:block}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .none{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:13px}
+.vb{padding:9px 11px 11px;font-size:13.5px}
+.vb .c{font-weight:700;font-size:14.5px;line-height:1.3}
+.vb .m{color:var(--sub);margin-top:2px}
+.vb a{color:var(--pri);text-decoration:none;font-weight:600}
+.tag{display:inline-block;font-size:11.5px;border-radius:6px;padding:0 6px;margin-left:4px;background:#fff4e5;color:var(--warn)}
+.msg{text-align:center;padding:60px 16px;color:var(--sub)}
+.msg b{display:block;color:var(--ink);font-size:17px;margin-bottom:6px}
+.empty{color:var(--sub);padding:14px 2px}
+@media (max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:repeat(2,1fr)}.vb{font-size:12.5px}.vb .c{font-size:13.5px}}
+@media print{
+  body{background:#fff}.bar .btn,.chips{display:none!important}
+  .top{background:#fff;color:#000;border-bottom:2px solid #000}.card,.kpi,.vcard{break-inside:avoid;border-color:#bbb}
+  .grid{grid-template-columns:repeat(3,1fr)}.ph{aspect-ratio:3/4}
+}
+</style>
+</head>
+<body>
+<div class="top"><div class="k">COOL INNOTECH · SALES</div><h1>รายงานการเข้าพบลูกค้า</h1><div class="s" id="sub">กำลังโหลด…</div></div>
+<div class="wrap">
+  <div id="load" class="msg"><b>กำลังโหลดรายงาน…</b>ใช้เวลาไม่กี่วินาที</div>
+  <div id="err" class="msg" hidden><b id="errT">เปิดรายงานไม่ได้</b><span id="errS"></span></div>
+  <div id="main" hidden>
+    <div class="bar">
+      <div class="tabs" id="tabs"></div>
+      <div class="sp"></div>
+      <button class="btn" id="csv" type="button">ดาวน์โหลด Excel</button>
+      <button class="btn" id="prn" type="button">พิมพ์ / PDF</button>
+    </div>
+    <div class="range" id="range"></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="card"><h2>สรุปแยกฝ่ายขาย</h2><div id="tbl"></div></div>
+    <div class="chips" id="chips"></div>
+    <div id="gal"></div>
+  </div>
+</div>
+<script>
+/* ====== ตั้งค่า 1 บรรทัดนี้ (ค่าเดียวกับ API_URL ใน index.html) ====== */
+var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4HoZvMwYuCiAuq3eLsBRkw_muY4xEQNgFwZlJ6vJwpQ_Tw/exec';
+/* ===================================================================== */
+(function(){
+  var D=null, sec=0, rep='';
+  function $(i){return document.getElementById(i);}
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function th(ymd){var p=String(ymd).split('-');return (+p[2])+'/'+(+p[1])+'/'+p[0];}
+  var DOW=['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+  function dow(ymd){var p=ymd.split('-');return DOW[new Date(+p[0],+p[1]-1,+p[2]).getDay()];}
+  function fail(t,s){$('load').hidden=true;$('main').hidden=true;$('err').hidden=false;$('errT').textContent=t;$('errS').textContent=s||'';}
+  function thumb(u,w){
+    var m=String(u).match(/[?&]id=([^&]+)/);
+    return m?'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w'+w:u;
+  }
+  function mapUrl(g){var p=String(g).split(',');return 'https://www.google.com/maps?q='+encodeURIComponent(p[0].trim()+','+(p[1]||'').trim());}
+  function visits(){var s=D.sections[sec];return D.visits.filter(function(v){return v.date>=s.from&&v.date<=s.to&&(!rep||v.rep===rep);});}
+
+  function render(){
+    var s=D.sections[sec], sm=s.summary;
+    $('tabs').innerHTML=D.sections.length>1?D.sections.map(function(x,i){return '<button class="tab'+(i===sec?' on':'')+'" data-i="'+i+'">'+esc(x.label)+'</button>';}).join(''):'';
+    $('tabs').hidden=D.sections.length<2;
+    $('range').textContent=s.label+' · '+s.rangeTxt;
+    var noPhoto=sm.reps.reduce(function(a,x){return a+x.noPhoto;},0);
+    $('kpis').innerHTML=[['การเข้าพบ',sm.visits,'ครั้ง'],['ลูกค้า (ไม่ซ้ำ)',sm.customers,'ราย'],['ฝ่ายขาย',sm.reps.length,'คน'],['ไม่มีรูป',noPhoto,'ครั้ง']]
+      .map(function(k){return '<div class="kpi"><div class="l">'+k[0]+'</div><div class="v">'+k[1]+'<small>'+k[2]+'</small></div></div>';}).join('');
+    $('tbl').innerHTML=sm.reps.length?'<table><thead><tr><th>ฝ่ายขาย</th><th>เข้าพบ</th><th>ลูกค้า</th><th>ไม่มีรูป</th><th>ไม่มีพิกัด</th></tr></thead><tbody>'+
+      sm.reps.map(function(x){return '<tr class="rowsel" data-rep="'+esc(x.rep)+'"><td><b>'+esc(x.rep)+'</b></td><td>'+x.visits+'</td><td>'+x.customers+'</td><td'+(x.noPhoto?' class="warn"':'')+'>'+x.noPhoto+'</td><td'+(x.noGeo?' class="warn"':'')+'>'+x.noGeo+'</td></tr>';}).join('')+
+      '<tr><td><b>รวม</b></td><td><b>'+sm.visits+'</b></td><td><b>'+sm.customers+'</b></td><td></td><td></td></tr></tbody></table>':'<div class="empty">ไม่มีการเข้าพบในช่วงนี้</div>';
+    if(rep&&!sm.reps.some(function(x){return x.rep===rep;}))rep='';
+    $('chips').innerHTML=sm.reps.length?['<button class="chip'+(rep?'':' on')+'" data-rep="">ทุกคน</button>'].concat(sm.reps.map(function(x){
+      return '<button class="chip'+(rep===x.rep?' on':'')+'" data-rep="'+esc(x.rep)+'">'+esc(x.rep)+' · '+x.visits+'</button>';})).join(''):'';
+    /* แกลเลอรีหลักฐาน: แยกตามฝ่ายขาย → วันที่ */
+    var by={},order=[];
+    visits().forEach(function(v){if(!by[v.rep]){by[v.rep]=[];order.push(v.rep);}by[v.rep].push(v);});
+    order.sort(function(a,b){return by[b].length-by[a].length||a.localeCompare(b);});
+    $('gal').innerHTML=order.map(function(r){
+      var h='<div class="grp"><b>'+esc(r)+'</b><span>'+by[r].length+' ครั้ง</span></div>', last='';
+      by[r].forEach(function(v){
+        if(v.date!==last){if(last)h+='</div>';h+='<div class="day">'+dow(v.date)+' '+th(v.date)+'</div><div class="grid">';last=v.date;}
+        h+='<div class="vcard">'+(v.photo?'<a class="ph" href="'+esc(thumb(v.photo,1600))+'" target="_blank" rel="noopener"><img loading="lazy" src="'+esc(thumb(v.photo,600))+'" alt="รูป Check-in '+esc(v.cust)+'"></a>':'<div class="ph"><div class="none">ไม่มีรูป</div></div>')+
+          '<div class="vb"><div class="c">'+esc(v.cust||'(ไม่ระบุลูกค้า)')+(v.code?'':'<span class="tag">ลูกค้าใหม่</span>')+'</div>'+
+          '<div class="m">'+th(v.date)+' · '+esc(v.time||'—')+' น.</div>'+
+          '<div class="m">'+(v.geo?'<a href="'+esc(mapUrl(v.geo))+'" target="_blank" rel="noopener">📍 '+esc(v.geo)+'</a>':'<span class="warn">ไม่มีพิกัด</span>')+'</div></div></div>';
+      });
+      return h+(last?'</div>':'');
+    }).join('')||'<div class="empty">ไม่มีรายการ</div>';
+  }
+  function csv(){
+    var s=D.sections[sec], rows=[['วันที่','เวลา','ฝ่ายขาย','รหัสลูกค้า','ลูกค้า','พิกัด','แผนที่','รูป Check-in','ที่มา']];
+    visits().forEach(function(v){rows.push([th(v.date),v.time,v.rep,v.code,v.cust,v.geo,v.geo?mapUrl(v.geo):'',v.photo?thumb(v.photo,1600):'',v.source==='line'?'LINE':'แอป']);});
+    var txt='﻿'+rows.map(function(r){return r.map(function(c){c=String(c==null?'':c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}).join(',');}).join('\r\n');
+    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'}));
+    a.download='Visit_'+s.key+'_'+s.from+(s.to!==s.from?'_'+s.to:'')+(rep?'_'+rep:'')+'.csv';
+    document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+  }
+  document.addEventListener('click',function(e){
+    var t=e.target.closest&&e.target.closest('[data-i],[data-rep]');if(!t)return;
+    if(t.hasAttribute('data-i')){sec=+t.getAttribute('data-i');render();}
+    else{rep=t.getAttribute('data-rep');render();if(rep)$('chips').scrollIntoView({behavior:'smooth'});}
+  });
+  $('csv').onclick=csv;
+  $('prn').onclick=function(){window.print();};
+
+  var tok=(location.search.match(/[?&]t=([a-f0-9]+)/i)||[])[1];
+  if(!tok){fail('ลิงก์ไม่ถูกต้อง','เปิดรายงานจากปุ่มในกลุ่ม LINE เท่านั้น');return;}
+  fetch(API_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'report',t:tok})})
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(function(d){
+      if(!d||!d.ok){fail('เปิดรายงานไม่ได้',(d&&d.msg)||'');return;}
+      D=d;$('sub').textContent=d.typeLabel+' · สร้างเมื่อ '+String(d.generatedAt).slice(0,16);
+      $('load').hidden=true;$('main').hidden=false;render();
+    }).catch(function(){fail('เชื่อมต่อไม่สำเร็จ','ตรวจสัญญาณอินเทอร์เน็ต แล้วเปิดลิงก์ใหม่');});
+})();
+</script>
+</body>
+</html>
