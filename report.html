@@ -72,6 +72,11 @@ tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom:0;backgr
 .f a{color:var(--pri);text-decoration:none}
 .tag{display:inline-block;font-size:11.5px;font-weight:600;border-radius:4px;padding:0 6px;margin-left:6px;background:var(--warnbg);color:var(--warn);vertical-align:1px}
 .empty{color:var(--mute);padding:16px 2px}
+.grp.s{break-before:auto}
+.st{border:1px solid var(--line);border-top:0}
+.st table{table-layout:fixed}.st thead th{border-top:0}.st td.c{overflow-wrap:anywhere}
+.st td.d{text-align:left;color:var(--sub);font-size:13px}
+.st td.c{font-weight:600}
 .sign{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:44px;break-inside:avoid}
 .sign div{text-align:center;font-size:13px;color:var(--sub)}
 .sign .ln{border-bottom:1px solid #9aa7b2;height:44px;margin-bottom:6px}
@@ -109,7 +114,7 @@ tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom:0;backgr
 <body>
 <div class="tools" id="tools" hidden><div class="in">
   <div class="seg" id="tabs"></div>
-  <div class="seg" id="mode"><button data-m="rep" class="on">แยกตามฝ่ายขาย</button><button data-m="date">แยกตามวันที่</button></div>
+  <div class="seg" id="mode"><button data-m="sum" class="on">สรุปรายลูกค้า</button><button data-m="rep">พร้อมรูป · แยกฝ่ายขาย</button><button data-m="date">พร้อมรูป · แยกวันที่</button></div>
   <select id="repSel"></select>
   <div class="sp"></div>
   <button class="btn" id="csv" type="button">ดาวน์โหลด Excel</button>
@@ -135,7 +140,7 @@ tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom:0;backgr
     <div id="tbl"></div>
   </div>
   <div class="sec">
-    <div class="sec-h"><span class="no">3.</span><h2>รายละเอียดการเข้าพบและหลักฐาน</h2><span>รูปถ่ายมีลายน้ำ วันที่ เวลา พิกัด จากระบบ</span></div>
+    <div class="sec-h"><span class="no">3.</span><h2 id="s3t"></h2><span id="s3n"></span></div>
     <div id="detail"></div>
   </div>
 
@@ -154,7 +159,8 @@ tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom:0;backgr
 var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4HoZvMwYuCiAuq3eLsBRkw_muY4xEQNgFwZlJ6vJwpQ_Tw/exec';
 /* ===================================================================== */
 (function(){
-  var D=null, sec=0, rep='', mode='rep';
+  var D=null, sec=0, rep='', mode='sum';
+  var MON_S=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   var MON=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
   var DOW=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
   function $(i){return document.getElementById(i);}
@@ -169,6 +175,26 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4H
   function mapUrl(g){var p=String(g).split(',');return 'https://www.google.com/maps?q='+encodeURIComponent(p[0].trim()+','+(p[1]||'').trim());}
   function list(){var s=D.sections[sec];return D.visits.filter(function(v){return v.date>=s.from&&v.date<=s.to&&(!rep||v.rep===rep);});}
 
+  /* วันที่แบบย่อ จัดกลุ่มตามเดือน: "13, 15, 16 ต.ค. 69" */
+  function datesTxt(ds){
+    var by={},ord=[];
+    ds.forEach(function(x){var d=pd(x),k=d.getFullYear()+'-'+d.getMonth();if(!by[k]){by[k]={m:d.getMonth(),y:d.getFullYear(),d:[]};ord.push(k);}if(by[k].d.indexOf(d.getDate())<0)by[k].d.push(d.getDate());});
+    return ord.map(function(k){var g=by[k];return g.d.join(', ')+' '+MON_S[g.m]+' '+String(g.y+543).slice(2);}).join(' · ');
+  }
+  function sumData(vs){
+    var by={},order=[];
+    vs.forEach(function(v){
+      if(!by[v.rep]){by[v.rep]={c:{},o:[],n:0};order.push(v.rep);}
+      var R=by[v.rep],k=v.code||('N:'+v.cust);R.n++;
+      if(!R.c[k]){R.c[k]={cust:v.cust,code:v.code,n:0,dates:[]};R.o.push(k);}
+      R.c[k].n++;R.c[k].dates.push(v.date);
+    });
+    order.sort(function(a,b){return by[b].n-by[a].n||a.localeCompare(b);});
+    return order.map(function(r){
+      var cs=by[r].o.map(function(k){return by[r].c[k];}).sort(function(a,b){return b.n-a.n||String(a.cust).localeCompare(String(b.cust));});
+      return {rep:r,n:by[r].n,custs:cs};
+    });
+  }
   function rowHtml(v,i,showRep){
     var ph=v.photo?'<button class="ph" type="button" data-img="'+esc(thumb(v.photo,1600))+'"><img loading="lazy" src="'+esc(thumb(v.photo,500))+'" alt="รูป Check-in"></button>':'<div class="ph none">ไม่มีรูป</div>';
     return '<div class="row"><div class="i">'+i+'</div>'+ph+'<dl class="f">'+
@@ -198,7 +224,15 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4H
       '</tbody>'+(rep?'':'<tfoot><tr><td class="l"></td><td class="l">รวม</td><td class="num">'+sm.visits+'</td><td class="num">'+sm.customers+'</td><td class="hide-m"></td><td class="hide-m"></td></tr></tfoot>')+'</table>':'<div class="empty">ไม่มีการเข้าพบในช่วงนี้</div>';
     /* รายละเอียด */
     var h='';
-    if(mode==='rep'){
+    $('s3t').textContent=mode==='sum'?'รายชื่อลูกค้าที่เข้าพบ แยกตามฝ่ายขาย':'รายละเอียดการเข้าพบและหลักฐาน';
+    $('s3n').textContent=mode==='sum'?'วันที่ = วันที่เข้าพบในช่วงรายงาน':'รูปถ่ายมีลายน้ำ วันที่ เวลา พิกัด จากระบบ';
+    if(mode==='sum'){
+      sumData(vs).forEach(function(R){
+        h+='<div class="grp s"><div class="grp-h"><b>'+esc(R.rep)+'</b><span>เข้าพบ '+R.n+' ครั้ง · ลูกค้า '+R.custs.length+' ราย</span></div><div class="st"><table><colgroup><col style="width:64px"><col style="width:46%"><col style="width:72px"><col></colgroup><thead><tr><th class="l">ลำดับ</th><th class="l">ลูกค้า</th><th>ครั้ง</th><th class="l">วันที่เข้าพบ</th></tr></thead><tbody>'+
+          R.custs.map(function(c,i){return '<tr><td class="l num">'+(i+1)+'</td><td class="l c">'+esc(c.cust||'(ไม่ระบุ)')+(c.code?'':'<span class="tag">ลูกค้าใหม่</span>')+'</td><td class="num">'+c.n+'</td><td class="d num">'+datesTxt(c.dates)+'</td></tr>';}).join('')+
+          '</tbody><tfoot><tr><td class="l"></td><td class="l">รวม</td><td class="num">'+R.n+'</td><td class="l"></td></tr></tfoot></table></div></div>';
+      });
+    }else if(mode==='rep'){
       var by={},order=[];
       vs.forEach(function(v){if(!by[v.rep]){by[v.rep]=[];order.push(v.rep);}by[v.rep].push(v);});
       order.sort(function(a,b){return by[b].length-by[a].length||a.localeCompare(b);});
@@ -220,11 +254,19 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4H
     $('detail').innerHTML=h||'<div class="empty">ไม่มีรายการ</div>';
   }
   function csv(){
+    if(mode==='sum'){
+      var s0=D.sections[sec], rws=[['ฝ่ายขาย','ลำดับ','รหัสลูกค้า','ลูกค้า','ลูกค้าใหม่','จำนวนครั้ง','วันที่เข้าพบ']];
+      sumData(list()).forEach(function(R){R.custs.forEach(function(c,i){rws.push([R.rep,i+1,c.code,c.cust,c.code?'':'ใช่',c.n,c.dates.map(thNum).join(', ')]);});});
+      return dl(rws,'สรุปลูกค้า_'+s0.key+'_'+s0.from+(s0.to!==s0.from?'_'+s0.to:'')+(rep?'_'+rep:''));
+    }
     var s=D.sections[sec], rows=[['ลำดับ','วันที่','เวลา','ฝ่ายขาย','รหัสลูกค้า','ลูกค้า','ลูกค้าใหม่','พิกัด','ลิงก์แผนที่','ลิงก์รูป Check-in','ที่มา']];
     list().forEach(function(v,i){rows.push([i+1,thNum(v.date),v.time,v.rep,v.code,v.cust,v.code?'':'ใช่',v.geo,v.geo?mapUrl(v.geo):'',v.photo?thumb(v.photo,1600):'',v.source==='line'?'LINE':'แอป']);});
+    dl(rows,'รายงานเข้าพบ_'+s.key+'_'+s.from+(s.to!==s.from?'_'+s.to:'')+(rep?'_'+rep:''));
+  }
+  function dl(rows,name){
     var txt='﻿'+rows.map(function(r){return r.map(function(c){c=String(c==null?'':c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}).join(',');}).join('\r\n');
     var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'}));
-    a.download='รายงานเข้าพบ_'+s.key+'_'+s.from+(s.to!==s.from?'_'+s.to:'')+(rep?'_'+rep:'')+'.csv';
+    a.download=name+'.csv';
     document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
   }
   document.addEventListener('click',function(e){
@@ -245,7 +287,7 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4H
     .then(function(d){
       if(!d||!d.ok){fail('เปิดรายงานไม่ได้',(d&&d.msg)||'');return;}
       D=d;
-      var ref='VR-'+String(d.ref).replace(/-/g,'')+'-'+({all:'ALL',day:'D',week:'W',month:'M'}[d.type]||'X');
+      var ref='VR-'+String(d.ref).replace(/-/g,'')+'-'+({all:'ALL',day:'D',week:'W',month:'M',range:'R'}[d.type]||'X');
       $('refNo').textContent=ref;$('footRef').textContent=ref;
       var g=String(d.generatedAt);$('genAt').textContent=thNum(g.slice(0,10))+' '+g.slice(11,16)+' น.';
       $('load').hidden=true;$('tools').hidden=false;$('paper').hidden=false;render();
