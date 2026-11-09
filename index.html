@@ -53,11 +53,30 @@ html,body{margin:0;height:100%;background:#000;color:var(--ink);overflow:hidden;
 .camIcon{width:120px;height:120px;border-radius:50%;background:var(--pri);display:flex;align-items:center;justify-content:center;
   font-size:56px;border:0;cursor:pointer;margin-bottom:6px}
 .vh{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+/* ลงทะเบียนครั้งแรกในหน้านี้เลย */
+#sReg{z-index:10;background:rgba(6,12,16,.94);justify-content:center;padding:20px}
+#sReg .box{max-width:400px;width:100%;margin:0 auto;background:#142029;border-radius:18px;padding:20px}
+#sReg h2{margin:0 0 4px;font-size:19px}
+#sReg p{margin:0 0 14px;color:var(--sub);font-size:14px}
+#sReg label{display:block;font-size:13.5px;color:var(--sub);margin:0 0 5px}
+#sReg input{width:100%;min-height:50px;border:1px solid #2c3d4a;border-radius:12px;background:#0c1419;color:#fff;font:inherit;font-size:17px;padding:0 14px;margin-bottom:12px}
+#sReg .err{color:var(--bad);font-size:14px;min-height:20px;margin-bottom:8px}
 </style>
 </head>
 <body>
 
 <section id="sLoad" class="scr"><div class="center"><div class="dot spin"></div><div class="sub" style="margin-top:12px">กำลังเปิดกล้อง…</div></div></section>
+
+<section id="sReg" class="scr" hidden>
+  <div class="box">
+    <h2>ลงทะเบียนครั้งแรก</h2>
+    <p>ใช้ชื่อผู้ใช้และรหัสผ่านเดียวกับที่ใช้เข้า Dashboard ทำครั้งเดียว ครั้งต่อไปเข้ากล้องได้เลย</p>
+    <label for="rgU">ชื่อผู้ใช้</label><input id="rgU" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+    <label for="rgP">รหัสผ่าน</label><input id="rgP" type="password" autocomplete="current-password">
+    <div class="err" id="rgE"></div>
+    <button class="btn" id="rgB" type="button">ลงทะเบียนแล้วเปิดกล้อง</button>
+  </div>
+</section>
 
 <section id="sErr" class="scr" hidden>
   <div class="center">
@@ -103,12 +122,12 @@ html,body{margin:0;height:100%;background:#000;color:var(--ink);overflow:hidden;
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
 /* ====== ตั้งค่า 2 บรรทัดนี้ (ไม่ใช่ความลับ) ====== */
-   var LIFF_ID = '2012033456-qXfqv444';
-   var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4HoZvMwYuCiAuq3eLsBRkw_muY4xEQNgFwZlJ6vJwpQ_Tw/exec';
+var LIFF_ID = '2012033456-qXfqv444';                       /* LINE Developers → LINE Login channel → LIFF → LIFF ID */
+var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4HoZvMwYuCiAuq3eLsBRkw_muY4xEQNgFwZlJ6vJwpQ_Tw/exec';   /* ค่าเดียวกับ APP_URL ใน Script Properties */
 /* ================================================ */
 (function(){
   var MAX_SIDE=1100, QUALITY=0.62, MAX_AGE_SEC=600, SENT_TEXT='📷 ส่งรูปเช็คอินแล้ว';
-  var st={rep:'',offset:0,geo:null,geoBusy:false,photo:'',ageSec:null,stream:null,ready:false,idToken:'',waiters:[],busy:false};
+  var st={rep:'',offset:0,geo:null,geoBusy:false,place:'',placeKey:'',placeBusy:false,photo:'',ageSec:null,stream:null,ready:false,idToken:'',waiters:[],busy:false};
 
   function $(i){return document.getElementById(i);}
   function show(id){['sLoad','sErr','cam'].forEach(function(k){$(k).hidden=(k!==id);});}
@@ -126,8 +145,24 @@ html,body{margin:0;height:100%;background:#000;color:var(--ink);overflow:hidden;
   function stampLines(){
     var g=st.geo;
     return [fmt(nowMs()),
+      g&&st.place&&st.placeKey===pKey(g)?('สถานที่ '+st.place):null,
       g?('พิกัด '+g.lat.toFixed(5)+', '+g.lng.toFixed(5)+' (±'+Math.round(g.acc)+' ม.)'):'ไม่มีข้อมูลพิกัด',
-      'ฝ่ายขาย: '+(st.rep||'…'), 'COOL INNOTECH · Check-in'];
+      'ฝ่ายขาย: '+(st.rep||'…'), 'COOL INNOTECH · Check-in'].filter(function(t){return t!==null;});
+  }
+  /* ---------- ชื่อสถานที่ (แขวง/ตำบล · เขต/อำเภอ · จังหวัด) ---------- */
+  function pKey(g){return g.lat.toFixed(3)+','+g.lng.toFixed(3);}
+  function getPlace(){
+    var g=st.geo;if(!g||!st.idToken||st.placeBusy)return;
+    var k=pKey(g);if(st.placeKey===k&&st.place)return;
+    st.placeBusy=true;
+    api({action:'place',idToken:st.idToken,geo:g.lat.toFixed(5)+', '+g.lng.toFixed(5)}).then(function(r){
+      st.placeBusy=false;if(r&&r.ok&&r.place){st.place=r.place;st.placeKey=k;tick();}
+    }).catch(function(){st.placeBusy=false;});
+  }
+  function withPlace(cb){ /* รอชื่อสถานที่สั้นๆ ไม่เกิน 3 วิ ถ้าไม่ได้ก็ประทับแค่พิกัด */
+    if(!st.geo||(st.place&&st.placeKey===pKey(st.geo))){cb();return;}
+    getPlace();var t0=Date.now(),t=setInterval(function(){
+      if(!st.placeBusy||Date.now()-t0>3000){clearInterval(t);cb();}},150);
   }
   function tick(){ if(!$('shootUi').hidden) $('stampPrev').innerHTML=stampLines().map(function(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;');}).join('<br>'); }
   function whenReady(cb){ if(st.ready)cb(); else st.waiters.push(cb); }
@@ -139,7 +174,7 @@ html,body{margin:0;height:100%;background:#000;color:var(--ink);overflow:hidden;
     st.geoBusy=true;setGeo('wait','กำลังหาพิกัด…');
     navigator.geolocation.getCurrentPosition(function(p){
       st.geoBusy=false;st.geo={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,ts:Date.now()};
-      setGeo('ok','±'+Math.round(p.coords.accuracy)+' ม.');tick();if(done)done();
+      setGeo('ok','±'+Math.round(p.coords.accuracy)+' ม.');tick();getPlace();if(done)done();
     },function(err){
       st.geoBusy=false;st.geo=null;
       setGeo('bad',(err&&err.code===1?'ไม่อนุญาตพิกัด':'หาพิกัดไม่ได้')+' · แตะลองใหม่');if(done)done();
@@ -187,10 +222,10 @@ html,body{margin:0;height:100%;background:#000;color:var(--ink);overflow:hidden;
   function showStill(src){$('still').src=src;$('still').hidden=false;$('spacer').hidden=true;$('video').hidden=true;$('shootUi').hidden=true;$('fbUi').hidden=true;}
   function finishShot(src,w,h){
     upState('spin','กำลังประทับลายน้ำ…','');
-    whenReady(function(){ withGeo(function(){
+    whenReady(function(){ withGeo(function(){ withPlace(function(){
       try{st.photo=stamp(src,w,h);}catch(e){upState('bad','ประมวลผลรูปไม่สำเร็จ','กรุณาถ่ายใหม่');$('retake').hidden=false;return;}
       showStill(st.photo);send();
-    });});
+    });});});
   }
   function shoot(){
     var v=$('video');if(!v.videoWidth)return;
@@ -238,7 +273,8 @@ html,body{margin:0;height:100%;background:#000;color:var(--ink);overflow:hidden;
     api({action:'upload',idToken:st.idToken,photo:st.photo,meta:meta}).then(function(r){
       st.busy=false;
       if(!r||!r.ok){
-        if(r&&(r.code==='auth'||r.code==='reg')){fail(r.msg);return;}
+        if(r&&r.code==='reg'){showReg();return;}
+        if(r&&r.code==='auth'){fail(r.msg);return;}
         upState('bad','อัปโหลดไม่สำเร็จ',(r&&r.msg)||'กรุณาลองอีกครั้ง');$('retry').hidden=false;$('retake').hidden=false;return;
       }
       if(r.completed) upState('ok','บันทึก Check-in เรียบร้อย','ลูกค้า: '+r.customer+' · '+r.at+' น.\nกำลังกลับไปที่แชท…');
@@ -269,16 +305,35 @@ html,body{margin:0;height:100%;background:#000;color:var(--ink);overflow:hidden;
     if(!liff.isLoggedIn()){liff.login({redirectUri:location.href});return;}
     st.idToken=liff.getIDToken()||'';
     if(!st.idToken){fail('ตั้งค่า LIFF ยังไม่ครบ (ต้องเปิดสิทธิ์ openid)');return;}
+    return doInit();
+  }).catch(function(){fail('เชื่อมต่อไม่สำเร็จ ตรวจสัญญาณแล้วเปิดใหม่');});
+
+  function showReg(){$('sReg').hidden=false;setTimeout(function(){try{$('rgU').focus();}catch(e){}},50);}
+  $('rgB').onclick=function(){
+    var u=$('rgU').value.trim(),p=$('rgP').value;
+    if(!u||!p){$('rgE').textContent='กรุณาใส่ชื่อผู้ใช้และรหัสผ่าน';return;}
+    $('rgB').disabled=true;$('rgB').textContent='กำลังตรวจสอบ…';$('rgE').textContent='';
+    api({action:'bind',idToken:st.idToken,username:u,password:p}).then(function(r){
+      $('rgB').disabled=false;$('rgB').textContent='ลงทะเบียนแล้วเปิดกล้อง';
+      if(!r||!r.ok){$('rgE').textContent=(r&&r.msg)||'ลงทะเบียนไม่สำเร็จ';return;}
+      $('sReg').hidden=true;$('rgP').value='';
+      doInit().then(function(){ if(st.photo&&!st.busy) send(); });   /* ถ้าถ่ายไว้แล้ว ส่งต่อให้เลย */
+    }).catch(function(){$('rgB').disabled=false;$('rgB').textContent='ลงทะเบียนแล้วเปิดกล้อง';$('rgE').textContent='เชื่อมต่อไม่สำเร็จ ลองอีกครั้ง';});
+  };
+  $('rgP').onkeydown=function(e){if(e.key==='Enter')$('rgB').click();};
+
+  function doInit(){
     return api({action:'init',idToken:st.idToken}).then(function(r){
+      if(r&&r.code==='reg'){showReg();return;}
       if(!r||!r.ok){fail((r&&r.msg)||'ยืนยันตัวตนไม่สำเร็จ');return;}
       st.rep=r.rep||'';st.offset=(r.now||Date.now())-Date.now();
       if(r.maxAgeSec)MAX_AGE_SEC=r.maxAgeSec;
       $('repName').textContent=st.rep;
       if(r.customer)$('custTag').textContent='ลูกค้า: '+r.customer;
-      st.ready=true;tick();
+      st.ready=true;tick();getPlace();
       var w=st.waiters;st.waiters=[];w.forEach(function(f){f();});
     });
-  }).catch(function(){fail('เชื่อมต่อไม่สำเร็จ ตรวจสัญญาณแล้วเปิดใหม่');});
+  }
 })();
 </script>
 </body>
