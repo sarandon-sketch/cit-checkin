@@ -202,7 +202,9 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4H
       '<dt>ลูกค้า</dt><dd class="c">'+esc(v.cust||'(ไม่ระบุ)')+(v.code?'':'<span class="tag">ลูกค้าใหม่</span>')+'</dd>'+
       (v.code?'<dt>รหัสลูกค้า</dt><dd>'+esc(v.code)+'</dd>':'')+
       (showRep?'<dt>ฝ่ายขาย</dt><dd>'+esc(v.rep)+'</dd>':'')+
-      '<dt>วันที่ / เวลา</dt><dd class="num">'+thNum(v.date)+' · '+esc(v.time||'—')+' น.</dd>'+
+      '<dt>วันที่</dt><dd class="num">'+thNum(v.date)+'</dd>'+
+      (v.plan?'<dt>เวลานัดหมาย</dt><dd class="num">'+esc(v.plan)+' น.</dd>':'')+
+      '<dt>'+(v.shot?'เวลาถ่ายรูปจริง':'เวลา')+'</dt><dd class="num">'+esc(v.shot||v.time||'—')+' น.'+(v.shot?' <span class="geo">(ตรงกับลายน้ำบนรูป)</span>':'')+'</dd>'+
       '<dt>สถานที่</dt><dd>'+(v.geo?'<a href="'+esc(mapUrl(v.geo))+'" target="_blank" rel="noopener">'+esc(v.place||'ดูบนแผนที่')+' ↗</a><div class="geo num">'+esc(v.geo)+'</div>':'<span class="w">ไม่มีพิกัด</span>')+'</dd>'+
       (!v.photo?'<dt>หมายเหตุ</dt><dd class="w">ไม่มีรูปถ่ายประกอบ</dd>':'')+
       '</dl></div>';
@@ -260,8 +262,8 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4H
       sumData(list()).forEach(function(R){R.custs.forEach(function(c,i){rws.push([R.rep,i+1,c.code,c.cust,c.code?'':'ใช่',c.n,c.dates.map(thNum).join(', ')]);});});
       return dl(rws,'สรุปลูกค้า_'+s0.key+'_'+s0.from+(s0.to!==s0.from?'_'+s0.to:'')+(rep?'_'+rep:''));
     }
-    var s=D.sections[sec], rows=[['ลำดับ','วันที่','เวลา','ฝ่ายขาย','รหัสลูกค้า','ลูกค้า','ลูกค้าใหม่','สถานที่','พิกัด','ลิงก์แผนที่','ลิงก์รูป Check-in','ที่มา']];
-    list().forEach(function(v,i){rows.push([i+1,thNum(v.date),v.time,v.rep,v.code,v.cust,v.code?'':'ใช่',v.place||'',v.geo,v.geo?mapUrl(v.geo):'',v.photo?thumb(v.photo,1600):'',v.source==='line'?'LINE':'แอป']);});
+    var s=D.sections[sec], rows=[['ลำดับ','วันที่','เวลานัดหมาย','เวลาถ่ายรูปจริง','ฝ่ายขาย','รหัสลูกค้า','ลูกค้า','ลูกค้าใหม่','สถานที่','พิกัด','ลิงก์แผนที่','ลิงก์รูป Check-in','ที่มา']];
+    list().forEach(function(v,i){rows.push([i+1,thNum(v.date),v.plan||'',v.shot||v.time||'',v.rep,v.code,v.cust,v.code?'':'ใช่',v.place||'',v.geo,v.geo?mapUrl(v.geo):'',v.photo?thumb(v.photo,1600):'',v.source==='line'?'LINE':'แอป']);});
     dl(rows,'รายงานเข้าพบ_'+s.key+'_'+s.from+(s.to!==s.from?'_'+s.to:'')+(rep?'_'+rep:''));
   }
   function dl(rows,name){
