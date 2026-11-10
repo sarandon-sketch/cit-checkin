@@ -127,7 +127,7 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4H
 /* ================================================ */
 (function(){
   var MAX_SIDE=1100, QUALITY=0.62, MAX_AGE_SEC=600, SENT_TEXT='📷 ส่งรูปเช็คอินแล้ว';
-  var st={rep:'',offset:0,geo:null,geoBusy:false,place:'',placeKey:'',placeBusy:false,photo:'',ageSec:null,stream:null,ready:false,idToken:'',waiters:[],busy:false};
+  var st={rep:'',offset:0,geo:null,geoBusy:false,place:'',placeKey:'',placeBusy:false,shotMs:null,photo:'',ageSec:null,stream:null,ready:false,idToken:'',waiters:[],busy:false};
 
   function $(i){return document.getElementById(i);}
   function show(id){['sLoad','sErr','cam'].forEach(function(k){$(k).hidden=(k!==id);});}
@@ -144,7 +144,7 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4H
   }
   function stampLines(){
     var g=st.geo;
-    return [fmt(nowMs()),
+    return [fmt(st.shotMs||nowMs()),
       g&&st.place&&st.placeKey===pKey(g)?('สถานที่ '+st.place):null,
       g?('พิกัด '+g.lat.toFixed(5)+', '+g.lng.toFixed(5)+' (±'+Math.round(g.acc)+' ม.)'):'ไม่มีข้อมูลพิกัด',
       'ฝ่ายขาย: '+(st.rep||'…'), 'COOL INNOTECH · Check-in'].filter(function(t){return t!==null;});
@@ -189,7 +189,7 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4H
 
   /* ---------- กล้อง ---------- */
   function startCam(){
-    $('still').hidden=true;$('spacer').hidden=false;$('video').hidden=false;$('upUi').hidden=true;$('fbUi').hidden=true;$('shootUi').hidden=false;
+    st.shotMs=null;$('still').hidden=true;$('spacer').hidden=false;$('video').hidden=false;$('upUi').hidden=true;$('fbUi').hidden=true;$('shootUi').hidden=false;
     if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){useFallback();return;}
     var done=false;
     var to=setTimeout(function(){if(!done){done=true;useFallback();}},9000);
@@ -232,7 +232,7 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4H
     if(navigator.vibrate)try{navigator.vibrate(30);}catch(e){}
     var cv=document.createElement('canvas');cv.width=v.videoWidth;cv.height=v.videoHeight;
     cv.getContext('2d').drawImage(v,0,0);
-    stopCam();st.ageSec=0;
+    stopCam();st.ageSec=0;st.shotMs=nowMs();   /* เวลาที่กดถ่ายจริง */
     showStill(cv.toDataURL('image/jpeg',0.8));
     finishShot(cv,cv.width,cv.height);
   }
@@ -244,7 +244,7 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4H
       $('fbUi').querySelector('.st2').textContent='รูปนี้ถ่ายไว้เมื่อ '+Math.round(age/60)+' นาทีที่แล้ว กรุณาถ่ายใหม่ด้วยกล้อง';
       return;
     }
-    st.ageSec=age;
+    st.ageSec=age;st.shotMs=(f.lastModified&&f.lastModified>1e12)?Math.min(f.lastModified+st.offset,nowMs()):null;   /* เวลาที่ถ่ายจริงของไฟล์ */
     var url=URL.createObjectURL(f),img=new Image();
     img.onload=function(){finishShot(img,img.naturalWidth,img.naturalHeight);setTimeout(function(){URL.revokeObjectURL(url);},5000);};
     img.onerror=function(){URL.revokeObjectURL(url);upState('bad','เปิดรูปไม่ได้','กรุณาถ่ายใหม่');$('retake').hidden=false;};
@@ -269,7 +269,7 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbw8Op_dDqVvwumlKf1M-QmW4H
     if(st.busy||!st.photo)return;
     st.busy=true;
     upState('spin','กำลังอัปโหลด…','ห้ามปิดหน้านี้จนกว่าจะเสร็จ');
-    var meta={lat:st.geo?st.geo.lat:null,lng:st.geo?st.geo.lng:null,acc:st.geo?st.geo.acc:null,ageSec:st.ageSec};
+    var meta={lat:st.geo?st.geo.lat:null,lng:st.geo?st.geo.lng:null,acc:st.geo?st.geo.acc:null,ageSec:st.ageSec,shotAt:st.shotMs||null};
     api({action:'upload',idToken:st.idToken,photo:st.photo,meta:meta}).then(function(r){
       st.busy=false;
       if(!r||!r.ok){
